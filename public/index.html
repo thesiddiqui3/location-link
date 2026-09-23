@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Location Link</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            box-sizing: border-box;
+        }
+
+        #location {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Location Sharing</h1>
+
+<button onclick="createLink()">
+    Create Location Link
+</button>
+
+<div id="link"></div>
+
+<div id="location"></div>
+
+<script>
+
+async function createLink() {
+
+    const response = await fetch("/api/create-link", {
+        method: "POST"
+    });
+
+    const data = await response.json();
+
+    const fullLink =
+        window.location.origin + data.link;
+
+    document.getElementById("link").innerHTML = `
+        <p>Send this link to the other device:</p>
+
+        <input
+            id="shareLink"
+            value="${fullLink}"
+            readonly
+        >
+
+        <br><br>
+
+        <button onclick="copyLink()">
+            Copy Link
+        </button>
+
+        <br><br>
+
+        <button onclick="checkLocation('${data.shareId}')">
+            Check Location
+        </button>
+    `;
+}
+
+function copyLink() {
+
+    const input = document.getElementById("shareLink");
+
+    navigator.clipboard.writeText(input.value);
+
+    alert("Link copied");
+}
+
+async function checkLocation(shareId) {
+
+    const response =
+        await fetch(`/api/location/${shareId}`);
+
+    const data = await response.json();
+
+    if (!data.latitude) {
+
+        document.getElementById("location").innerHTML =
+            "<p>Location not received yet.</p>";
+
+        return;
+    }
+
+    document.getElementById("location").innerHTML = `
+
+        <h2>Location Received</h2>
+
+        <p>
+            Latitude:
+            ${data.latitude}
+        </p>
+
+        <p>
+            Longitude:
+            ${data.longitude}
+        </p>
+
+        <p>
+            Accuracy:
+            ${data.accuracy} meters
+        </p>
+
+        <p>
+            Time:
+            ${data.timestamp}
+        </p>
+
+        <br>
+
+        <a
+            href="https://www.google.com/maps?q=${data.latitude},${data.longitude}"
+            target="_blank"
+        >
+            Open Location in Google Maps
+        </a>
+    `;
+}
+
+</script>
+
+</body>
+</html>
